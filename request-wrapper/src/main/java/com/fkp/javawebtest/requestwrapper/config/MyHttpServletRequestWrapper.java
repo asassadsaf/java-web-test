@@ -1,12 +1,23 @@
 package com.fkp.javawebtest.requestwrapper.config;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.CoyoteInputStream;
+import org.apache.catalina.connector.CoyoteReader;
+import org.apache.catalina.connector.InputBuffer;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
 import org.apache.tomcat.util.http.MimeHeaders;
+import org.springframework.http.MediaType;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -15,11 +26,15 @@ import java.util.*;
  * @description
  * @date 2024/4/29 10:12
  */
+@Slf4j
 public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     private final ParameterMap<String, String[]> parameterMap;
 
     private final MimeHeaders headers;
+
+    private final byte[] data;
+
     /**
      * Constructs a request object wrapping the given request.
      *
@@ -30,6 +45,24 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
         super(request);
         parameterMap = new ParameterMap<>();
         headers = new MimeHeaders();
+        data = getRequestBuf2Data(request);
+        System.out.println("aaa");
+    }
+
+    private byte[] getRequestBuf2Data(HttpServletRequest request) {
+        try {
+            ServletInputStream inputStream = request.getInputStream();
+            byte[] buf = new byte[1024];
+            ByteArrayOutputStream bis = new ByteArrayOutputStream();
+            int len;
+            while ((len = inputStream.read(buf)) != -1){
+                bis.write(buf, 0 ,len);
+            }
+            return bis.toByteArray();
+        }catch (IOException e){
+            log.error("Get data from request input stream error.", e);
+        }
+        return new byte[0];
     }
 
     /**
@@ -147,6 +180,84 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     }
 
+    @Override
+    public ServletInputStream getInputStream() throws IOException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(data);
+        return new ServletInputStream(){
 
+            @Override
+            public int read() throws IOException {
+                return bis.read();
+            }
 
+            @Override
+            public boolean isFinished() {
+                return false;
+            }
+
+            @Override
+            public boolean isReady() {
+                return false;
+            }
+
+            @Override
+            public void setReadListener(ReadListener listener) {
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                bis.close();
+            }
+        };
+    }
+
+    @Override
+    public BufferedReader getReader() throws IOException {
+        ServletInputStream inputStream = getInputStream();
+        return new BufferedReader(new InputStreamReader(inputStream){
+            @Override
+            public void close() throws IOException {
+                super.close();
+                inputStream.close();
+            }
+        });
+    }
+
+    public Object getBodyParam(String name){
+        String contentType = getContentType();
+        if(StringUtils.isBlank(contentType)){
+            return null;
+        }
+        String contentTypeLower = contentType.toLowerCase(Locale.ROOT);
+        //form-data
+
+        //x-www-form-urlencoded
+
+        //raw: text(json) json
+        //只考虑json为object的情况，json array不考虑
+        if(contentTypeLower.equals(MediaType.TEXT_PLAIN_VALUE) || contentTypeLower.equals(MediaType.APPLICATION_JSON_VALUE)){
+            String str;
+            try {
+                str = new String(data, getCharacterEncoding());
+            } catch (UnsupportedEncodingException e) {
+                log.error("convert bytes data to string error.", e);
+                return null;
+            }
+            //Object
+            if(!str.startsWith("{")){
+                log.error("parse json str to object error, str not start with '{'. str: {}", str);
+                return null;
+            }
+            JSONObject jsonObject;
+            try {
+                jsonObject = JSON.parseObject(str);
+            }catch (Exception e){
+                log.error("parse json str to object error. str: {}", str, e);
+                return null;
+            }
+            return jsonObject.get(name);
+        }
+        return null;
+    }
 }

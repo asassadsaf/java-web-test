@@ -1,8 +1,7 @@
 package com.fkp.javawebtest.requestwrapper.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import com.fkp.javawebtest.requestwrapper.eneity.User;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +20,11 @@ public class TestController {
     @GetMapping(value = "/hello")
     public String hello(@RequestParam(name = "name") String name, String tenantAccount){
         return "hello web!" + "name: " + name + " tenantAccount: " + tenantAccount;
+    }
+
+    @PostMapping(value = "/save")
+    public User save(@RequestBody User user){
+        return user;
     }
 
     public static void main(String[] args) {
