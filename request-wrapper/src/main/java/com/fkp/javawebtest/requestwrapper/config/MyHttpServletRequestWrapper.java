@@ -1,16 +1,14 @@
 package com.fkp.javawebtest.requestwrapper.config;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.Part;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.connector.CoyoteInputStream;
-import org.apache.catalina.connector.CoyoteReader;
-import org.apache.catalina.connector.InputBuffer;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.MessageBytes;
@@ -51,6 +49,10 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     private byte[] getRequestBuf2Data(HttpServletRequest request) {
         try {
+            //先调用getParameterNames触发org.apache.catalina.connector#parseParameters方法，将parametersParsed设为true
+            //否则调用getInputStream会导致usingInputStream设为true，然后在调用parseParameters方法时检测到usingInputStream为true直接返回
+            //POST(form-data)类型同理
+            request.getParameterNames();
             ServletInputStream inputStream = request.getInputStream();
             byte[] buf = new byte[1024];
             ByteArrayOutputStream bis = new ByteArrayOutputStream();
@@ -107,7 +109,7 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     /**
      * 获取Get请求参数的值,若存在同名key，优先级 包装 > 原生
-     * Get请求在映射到Controller参数之前会调用该方法取参数
+     * Get/Post(x-www-form-urlencoded)请求在映射到Controller参数之前会调用该方法取参数
      * @param name 参数名
      * @return 参数值数组
      */
@@ -117,7 +119,7 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
     }
 
     /**
-     * 设置Get请求参数
+     * 设置Get/Post(x-www-form-urlencoded)请求参数
      * @param name 参数名
      * @param value 参数值
      */
@@ -232,8 +234,6 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
         String contentTypeLower = contentType.toLowerCase(Locale.ROOT);
         //form-data
 
-        //x-www-form-urlencoded
-
         //raw: text(json) json
         //只考虑json为object的情况，json array不考虑
         if(contentTypeLower.equals(MediaType.TEXT_PLAIN_VALUE) || contentTypeLower.equals(MediaType.APPLICATION_JSON_VALUE)){
@@ -259,5 +259,15 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
             return jsonObject.get(name);
         }
         return null;
+    }
+
+    @Override
+    public Collection<Part> getParts() throws IOException, ServletException {
+        return super.getParts();
+    }
+
+    @Override
+    public Part getPart(String name) throws IOException, ServletException {
+        return super.getPart(name);
     }
 }

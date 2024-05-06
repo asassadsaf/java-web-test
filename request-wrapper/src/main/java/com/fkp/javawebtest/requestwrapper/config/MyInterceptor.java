@@ -17,13 +17,14 @@ public class MyInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if(request instanceof MyHttpServletRequestWrapper requestWrapper){
-            requestWrapper.setParameter("tenantAccount", "zuhu1");
-            String tenantCode = requestWrapper.getHeader("tenantCode");
-            System.out.println(tenantCode);
-            requestWrapper.setHeader("tenantCode", "zuhu2");
-            System.out.println(requestWrapper.getHeader("tenantCode"));
-            requestWrapper.setHeader("tenantCode", "zuhu3");
-            System.out.println(requestWrapper.getHeader("tenantCode"));
+            requestWrapper.setParameter("tenantAccount", "zuhu100");
+//            requestWrapper.setParameter("tenantAccount", "zuhu1");
+//            String tenantCode = requestWrapper.getHeader("tenantCode");
+//            System.out.println(tenantCode);
+//            requestWrapper.setHeader("tenantCode", "zuhu2");
+//            System.out.println(requestWrapper.getHeader("tenantCode"));
+//            requestWrapper.setHeader("tenantCode", "zuhu3");
+//            System.out.println(requestWrapper.getHeader("tenantCode"));
         }
 
         return true;
