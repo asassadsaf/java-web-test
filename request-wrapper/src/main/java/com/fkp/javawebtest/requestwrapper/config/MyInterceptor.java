@@ -3,6 +3,7 @@ package com.fkp.javawebtest.requestwrapper.config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -25,6 +26,10 @@ public class MyInterceptor implements HandlerInterceptor {
 //            System.out.println(requestWrapper.getHeader("tenantCode"));
 //            requestWrapper.setHeader("tenantCode", "zuhu3");
 //            System.out.println(requestWrapper.getHeader("tenantCode"));
+        }else if(request instanceof StandardMultipartHttpServletRequest multipartHttpServletRequest &&
+                multipartHttpServletRequest.getRequest() instanceof MyHttpServletRequestWrapper requestWrapper){
+            requestWrapper.setParameter("tenantAccount", "zuhu_fkp");
+            requestWrapper.setParameter("user", "test");
         }
 
         return true;

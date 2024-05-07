@@ -2,6 +2,7 @@ package com.fkp.javawebtest.requestwrapper.controller;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSONWriter;
 import com.fkp.javawebtest.requestwrapper.eneity.User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,7 +55,10 @@ public class TestController {
 
 
     @PostMapping(value = "save3")
-    public String save3(User user, MultipartFile file){
-        return JSON.toJSONString(user);
+    public String save3(User user, MultipartFile file, String addr){
+        JSONObject obj = JSONObject.from(user);
+        obj.put("addr", addr);
+        obj.put("fileName", file.getOriginalFilename());
+        return JSON.toJSONString(obj, JSONWriter.Feature.WriteMapNullValue);
     }
 }

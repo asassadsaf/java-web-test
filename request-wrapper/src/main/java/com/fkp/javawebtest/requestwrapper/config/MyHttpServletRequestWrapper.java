@@ -80,7 +80,7 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
     }
 
     /**
-     * 获取所有Get请求参数， 若存在同名key，优先级 包装 > 原生
+     * 无调用， 若存在同名key，优先级 包装 > 原生
      * @return 参数值
      */
     @Override
@@ -93,7 +93,7 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
     }
 
     /**
-     * 获取Get所有参数名
+     * 获取Post(x-www-form-urlencoded,form-data(除file类型))所有参数名
      * @return 所有参数名的Enumeration类型
      */
     @Override
@@ -109,7 +109,7 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
 
     /**
      * 获取Get请求参数的值,若存在同名key，优先级 包装 > 原生
-     * Get/Post(x-www-form-urlencoded)请求在映射到Controller参数之前会调用该方法取参数
+     * Get/Post(x-www-form-urlencoded,form-data(除file类型))请求在映射到Controller参数之前会调用该方法取参数
      * @param name 参数名
      * @return 参数值数组
      */
@@ -232,8 +232,6 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
             return null;
         }
         String contentTypeLower = contentType.toLowerCase(Locale.ROOT);
-        //form-data
-
         //raw: text(json) json
         //只考虑json为object的情况，json array不考虑
         if(contentTypeLower.equals(MediaType.TEXT_PLAIN_VALUE) || contentTypeLower.equals(MediaType.APPLICATION_JSON_VALUE)){
@@ -261,6 +259,12 @@ public class MyHttpServletRequestWrapper extends HttpServletRequestWrapper {
         return null;
     }
 
+    /**
+     * POST(form-data)请求类型时调用改方法用来构造StandardMultipartHttpServletRequest对象
+     * @return 包含请求参数(普通参数parameter以及文件参数file)的Part对象的集合
+     * @throws IOException
+     * @throws ServletException
+     */
     @Override
     public Collection<Part> getParts() throws IOException, ServletException {
         return super.getParts();
